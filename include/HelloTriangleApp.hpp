@@ -2,14 +2,17 @@
 
 namespace Vulkan {
 
-class HelloTriangleApp {
-    public:
-        void run();
+    class HelloTriangleApp {
+        public:
+            HelloTriangleApp();
 
-    private:
-        void initVulkan();
-        void mainLoop();
-        void cleanup();
-};
+        public:
+            void run();
+
+        private:
+            void initVulkan();
+            void mainLoop();
+            void cleanup();
+    };
 
 } // namespace Vulkan

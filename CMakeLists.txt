@@ -16,6 +16,7 @@ target_link_libraries(HelloTriangle
     Vulkan::Vulkan
     glfw
     glm::glm
+    spdlog
 )
 
 add_executable(VulkanTest
@@ -50,3 +51,6 @@ CPMAddPackage(
     GITHUB_REPOSITORY g-truc/glm
     GIT_TAG 1.0.1
 )
+
+# Use spdlog logger.
+CPMAddPackage("gh:gabime/spdlog#v2.x")
