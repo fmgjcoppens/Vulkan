@@ -18,7 +18,7 @@ namespace Vulkan {
             void cleanup();
 
         private:
-            GLFWwindow *m_Window;
+            GLFWwindow* m_Window;
             const uint32_t m_Width = 1720;
             const uint32_t m_Height = 720;
     };

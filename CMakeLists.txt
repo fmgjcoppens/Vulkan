@@ -7,6 +7,8 @@ project(GUIApplicationTemplate LANGUAGES CXX)
 #################
 # It is nice if the main target is defined first because
 # the nvim-cmake plugin picks the first one from the Ninja build script).
+
+# Draw a triangle on the screen with Vulkan
 add_executable(HelloTriangle
     src/hello_triangle.cpp
     src/HelloTriangleApp.cpp
@@ -19,6 +21,7 @@ target_link_libraries(HelloTriangle
     spdlog
 )
 
+# Test if the system has Vulkan support
 add_executable(VulkanTest
     src/vulkan_test.cpp
 )
