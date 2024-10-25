@@ -1,4 +1,7 @@
 #include "HelloTriangleApp.hpp"
+#include <array>
+#include <cstddef>
+#include <cstdint>
 #include <vulkan/vulkan_core.h>
 
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
@@ -74,6 +77,24 @@ namespace Vulkan {
         uint32_t glfwExtensionCount = 0;
         const char** glfwExtensions;
         glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+        SPDLOG_INFO("--------------------------------");
+        SPDLOG_INFO("Required GLFW Vulkan extensions:");
+        for (uint32_t extension = 0; extension < glfwExtensionCount;
+             extension++) {
+            SPDLOG_INFO("\t{}", glfwExtensions[extension]);
+        }
+
+        uint32_t extensionCount = 0;
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
+                                               nullptr);
+        std::vector<VkExtensionProperties> extensions(extensionCount);
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
+                                               extensions.data());
+        SPDLOG_INFO("----------------------------");
+        SPDLOG_INFO("Available Vulkan extensions:");
+        for (const auto& extension : extensions) {
+            SPDLOG_INFO("\t{}", extension.extensionName);
+        }
 
         createInfo.enabledExtensionCount = glfwExtensionCount;
         createInfo.ppEnabledExtensionNames = glfwExtensions;
