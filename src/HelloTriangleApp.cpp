@@ -1,4 +1,5 @@
 #include "HelloTriangleApp.hpp"
+#include <vulkan/vulkan_core.h>
 
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 #include <spdlog/spdlog.h>
@@ -12,6 +13,9 @@ namespace Vulkan {
         SPDLOG_TRACE("HelloTriangleApp::HelloTriangleApp()");
     }
 
+    /**************************
+     ** root-level functions **
+     **************************/
     void HelloTriangleApp::run() {
         SPDLOG_TRACE("HelloTriangleApp::run()");
         initWindow();
@@ -20,6 +24,9 @@ namespace Vulkan {
         cleanup();
     }
 
+    /*************************
+     ** 1st-level functions **
+     *************************/
     void HelloTriangleApp::initWindow() {
         SPDLOG_TRACE("HelloTriangleApp::initWindow()");
         glfwInit();
@@ -31,6 +38,7 @@ namespace Vulkan {
 
     void HelloTriangleApp::initVulkan() {
         SPDLOG_TRACE("HelloTriangleApp::initVulkan()");
+        createVulkanInstance();
     }
 
     void HelloTriangleApp::mainLoop() {
@@ -44,6 +52,36 @@ namespace Vulkan {
         SPDLOG_TRACE("HelloTriangleApp::cleanup()");
         glfwDestroyWindow(m_Window);
         glfwTerminate();
+    }
+
+    /*************************
+     ** 2nd-level functions **
+     *************************/
+    void HelloTriangleApp::createVulkanInstance() {
+        SPDLOG_TRACE("HelloTriangleApp::createInstance()");
+        VkApplicationInfo appInfo{};
+        appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+        appInfo.pApplicationName = "Hello Triangle";
+        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+        appInfo.pEngineName = "No Engine";
+        appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+        appInfo.apiVersion = VK_API_VERSION_1_0;
+
+        VkInstanceCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+        createInfo.pApplicationInfo = &appInfo;
+
+        uint32_t glfwExtensionCount = 0;
+        const char** glfwExtensions;
+        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+        createInfo.enabledExtensionCount = glfwExtensionCount;
+        createInfo.ppEnabledExtensionNames = glfwExtensions;
+        createInfo.enabledLayerCount = 0;
+
+        if (vkCreateInstance(&createInfo, nullptr, &m_Instance) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create Vulkan instance!");
+        };
     }
 
 } // namespace Vulkan
