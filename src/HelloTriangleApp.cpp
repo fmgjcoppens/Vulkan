@@ -99,11 +99,12 @@ namespace Vulkan {
             SPDLOG_INFO("\t{}", extension.extensionName);
         }
 
-        //if (checkRequiredVulkanExtensions(&glfwExtensionCount,
-        //                                  glfwExtensions) != VK_SUCCESS) {
-        //    throw std::runtime_error(
-        //        "One or more Vulkan extensions required by GLFW are missing!");
-        //}
+        // if (checkRequiredVulkanExtensions(&glfwExtensionCount,
+        //                                   glfwExtensions) != VK_SUCCESS) {
+        //     throw std::runtime_error(
+        //         "One or more Vulkan extensions required by GLFW are
+        //         missing!");
+        // }
 
         createInfo.enabledExtensionCount = glfwExtensionCount;
         createInfo.ppEnabledExtensionNames = glfwExtensions;
@@ -118,8 +119,7 @@ namespace Vulkan {
                                                          const char** e) {
         SPDLOG_INFO("--------------------------------");
         SPDLOG_INFO("Required GLFW Vulkan extensions:");
-        for (uint32_t extension = 0; extension < *ec;
-             extension++) {
+        for (uint32_t extension = 0; extension < *ec; extension++) {
             SPDLOG_INFO("\t{}", e[extension]);
         }
 
