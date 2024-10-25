@@ -46,9 +46,12 @@ namespace Vulkan {
 
     void HelloTriangleApp::mainLoop() {
         SPDLOG_TRACE("HelloTriangleApp::mainLoop()");
-        // Unless we're rendering something to the screen we're not
+        // Until we're rendering something to the screen we're not
         // going to have a main while-loop here, because under Wayland/Hyprland
         // there will be no actuall window until this happens.
+        //while (!glfwWindowShouldClose(m_Window)) {
+        //    glfwPollEvents();
+        //}
     }
 
     void HelloTriangleApp::cleanup() {
