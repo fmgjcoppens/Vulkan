@@ -18,6 +18,7 @@ namespace Vulkan {
             void mainLoop();
             void cleanup();
             void createVulkanInstance();
+            bool checkRequiredVulkanExtensions(uint32_t* ec, const char** e);
 
         private:
             GLFWwindow* m_Window;
@@ -27,3 +28,4 @@ namespace Vulkan {
     };
 
 } // namespace Vulkan
+//

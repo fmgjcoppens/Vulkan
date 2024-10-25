@@ -49,7 +49,7 @@ namespace Vulkan {
         // Until we're rendering something to the screen we're not
         // going to have a main while-loop here, because under Wayland/Hyprland
         // there will be no actuall window until this happens.
-        //while (!glfwWindowShouldClose(m_Window)) {
+        // while (!glfwWindowShouldClose(m_Window)) {
         //    glfwPollEvents();
         //}
     }
@@ -99,13 +99,42 @@ namespace Vulkan {
             SPDLOG_INFO("\t{}", extension.extensionName);
         }
 
+        //if (checkRequiredVulkanExtensions(&glfwExtensionCount,
+        //                                  glfwExtensions) != VK_SUCCESS) {
+        //    throw std::runtime_error(
+        //        "One or more Vulkan extensions required by GLFW are missing!");
+        //}
+
         createInfo.enabledExtensionCount = glfwExtensionCount;
         createInfo.ppEnabledExtensionNames = glfwExtensions;
         createInfo.enabledLayerCount = 0;
 
         if (vkCreateInstance(&createInfo, nullptr, &m_Instance) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create Vulkan instance!");
-        };
+        }
+    }
+
+    bool HelloTriangleApp::checkRequiredVulkanExtensions(uint32_t* ec,
+                                                         const char** e) {
+        SPDLOG_INFO("--------------------------------");
+        SPDLOG_INFO("Required GLFW Vulkan extensions:");
+        for (uint32_t extension = 0; extension < *ec;
+             extension++) {
+            SPDLOG_INFO("\t{}", e[extension]);
+        }
+
+        uint32_t extensionCount = 0;
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
+                                               nullptr);
+        std::vector<VkExtensionProperties> extensions(extensionCount);
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
+                                               extensions.data());
+        SPDLOG_INFO("----------------------------");
+        SPDLOG_INFO("Available Vulkan extensions:");
+        for (const auto& extension : extensions) {
+            SPDLOG_INFO("\t{}", extension.extensionName);
+        }
+        return true;
     }
 
 } // namespace Vulkan
