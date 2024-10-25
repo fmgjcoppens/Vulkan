@@ -8,6 +8,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#define macOS
+
 namespace Vulkan {
 
     HelloTriangleApp::HelloTriangleApp() {
@@ -34,7 +36,7 @@ namespace Vulkan {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         m_Window =
-            glfwCreateWindow(m_Width, m_Height, "Vulkan", nullptr, nullptr);
+            glfwCreateWindow(m_Width, m_Height, m_Title, nullptr, nullptr);
     }
 
     void HelloTriangleApp::initVulkan() {
@@ -47,13 +49,16 @@ namespace Vulkan {
         // Until we're rendering something to the screen we're not
         // going to have a main while-loop here, because under Wayland/Hyprland
         // there will be no actuall window until this happens.
-        // while (!glfwWindowShouldClose(m_Window)) {
-        //    glfwPollEvents();
-        //}
+#ifdef macOS
+        while (!glfwWindowShouldClose(m_Window)) {
+            glfwPollEvents();
+        }
+#endif
     }
 
     void HelloTriangleApp::cleanup() {
         SPDLOG_TRACE("HelloTriangleApp::cleanup()");
+        vkDestroyInstance(m_Instance, nullptr);
         glfwDestroyWindow(m_Window);
         glfwTerminate();
     }
@@ -85,6 +90,22 @@ namespace Vulkan {
             SPDLOG_INFO("\t{}", glfwExtensions[extension]);
         }
 
+#ifdef macOS
+        std::vector<const char*> requiredExtensions;
+        for (uint32_t i = 0; i < glfwExtensionCount; i++) {
+            requiredExtensions.emplace_back(glfwExtensions[i]);
+        }
+        requiredExtensions.emplace_back(
+            VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+        createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+        createInfo.enabledExtensionCount = (uint32_t)requiredExtensions.size();
+        createInfo.ppEnabledExtensionNames = requiredExtensions.data();
+#else
+        createInfo.enabledExtensionCount = glfwExtensionCount;
+        createInfo.ppEnabledExtensionNames = glfwExtensions;
+#endif
+        createInfo.enabledLayerCount = 0;
+
         uint32_t extensionCount = 0;
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
                                                nullptr);
@@ -97,18 +118,9 @@ namespace Vulkan {
             SPDLOG_INFO("\t{}", extension.extensionName);
         }
 
-        // if (checkRequiredVulkanExtensions(&glfwExtensionCount,
-        //                                   glfwExtensions) != VK_SUCCESS) {
-        //     throw std::runtime_error(
-        //         "One or more Vulkan extensions required by GLFW are
-        //         missing!");
-        // }
-
-        createInfo.enabledExtensionCount = glfwExtensionCount;
-        createInfo.ppEnabledExtensionNames = glfwExtensions;
-        createInfo.enabledLayerCount = 0;
-
-        if (vkCreateInstance(&createInfo, nullptr, &m_Instance) != VK_SUCCESS) {
+        VkResult result = vkCreateInstance(&createInfo, nullptr, &m_Instance);
+        if (result != VK_SUCCESS) {
+            printf("Result of vkCreateInstance = %d\n", result);
             throw std::runtime_error("Failed to create Vulkan instance!");
         }
     }

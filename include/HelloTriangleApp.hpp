@@ -22,8 +22,9 @@ namespace Vulkan {
 
         private:
             GLFWwindow* m_Window;
-            const uint32_t m_Width = 1720;
-            const uint32_t m_Height = 720;
+            const char* m_Title = "Vulkan App";
+            const uint32_t m_Width = 1280;
+            const uint32_t m_Height = 800;
             VkInstance m_Instance;
     };
 
