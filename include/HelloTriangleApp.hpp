@@ -1,8 +1,8 @@
 #pragma once
 
 #include <GLFW/glfw3.h>
-#include <vulkan/vulkan_core.h>
 #include <vector>
+#include <vulkan/vulkan_core.h>
 
 namespace Vulkan {
 
@@ -19,7 +19,9 @@ namespace Vulkan {
             void mainLoop();
             void cleanup();
             void createVulkanInstance();
-            bool hasRequiredVulkanExtensions(const std::vector<const char*>& re);
+            bool
+            hasRequiredVulkanExtensions(const std::vector<const char*>& re);
+            bool hasValidationLayerSupport();
 
         private:
             GLFWwindow* m_Window;
@@ -32,11 +34,10 @@ namespace Vulkan {
                 "VK_LAYER_KHRONOS_validation"};
 
 #ifdef NDEBUG
-            const bool m_EnableValidationLayers = false;
+            const bool enableValidationLayers = false;
 #else
-            const bool m_EnableValidationLayers = true;
+            const bool enableValidationLayers = true;
 #endif
     };
 
 } // namespace Vulkan
-//

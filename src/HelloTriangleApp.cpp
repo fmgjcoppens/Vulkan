@@ -1,4 +1,5 @@
 #include "HelloTriangleApp.hpp"
+#include "glm/ext/scalar_uint_sized.hpp"
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -104,6 +105,11 @@ namespace Vulkan {
                                      "GLFW needs are missing!");
         }
 
+        if (!hasValidationLayerSupport()) {
+            throw std::runtime_error(
+                "One or more Vulkan validation layers are missing!");
+        }
+
         VkResult result = vkCreateInstance(&createInfo, nullptr, &m_Instance);
         if (result != VK_SUCCESS) {
             printf("Result of vkCreateInstance = %d\n", result);
@@ -113,11 +119,12 @@ namespace Vulkan {
 
     bool HelloTriangleApp::hasRequiredVulkanExtensions(
         const std::vector<const char*>& re) {
-        SPDLOG_INFO("--------------------------------");
-        SPDLOG_INFO("Required GLFW Vulkan extensions:");
-        for (const auto& extension : re) {
-            SPDLOG_INFO("\t{}", extension);
-        }
+        // SPDLOG_TRACE("HelloTriangleApp::hasRequiredVulkanExtensions()");
+        // SPDLOG_INFO("--------------------------------");
+        // SPDLOG_INFO("Required GLFW Vulkan extensions:");
+        // for (const auto& extension : re) {
+        //     SPDLOG_INFO("\t{}", extension);
+        // }
 
         uint32_t extensionCount = 0;
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
@@ -125,26 +132,55 @@ namespace Vulkan {
         std::vector<VkExtensionProperties> extensions(extensionCount);
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
                                                extensions.data());
-        SPDLOG_INFO("----------------------------");
-        SPDLOG_INFO("Available Vulkan extensions:");
-        for (const auto& extension : extensions) {
-            SPDLOG_INFO("\t{}", extension.extensionName);
-        }
+        // SPDLOG_INFO("----------------------------");
+        // SPDLOG_TRACE("Available Vulkan extensions:");
+        // for (const auto& extension : extensions) {
+        //     SPDLOG_TRACE("\t{}", extension.extensionName);
+        // }
 
         for (const auto& r_extension : re) {
-            SPDLOG_TRACE("required extension {}", r_extension);
-            bool found = false;
+            SPDLOG_TRACE("Required extension {}", r_extension);
+            bool extensionFound = false;
             for (const auto& a_extension : extensions) {
-                SPDLOG_TRACE("availba extension {}", a_extension.extensionName);
+                SPDLOG_TRACE("Available extension {}",
+                             a_extension.extensionName);
                 if ((std::string)a_extension.extensionName ==
                     (std::string)r_extension) {
-                    SPDLOG_INFO("Extension {} found.",
-                                a_extension.extensionName);
-                    found = true;
+                    SPDLOG_INFO("Required extension {} found.", r_extension);
+                    extensionFound = true;
+                    break;
                 }
             }
-            if (!found)
+            if (!extensionFound) {
+                SPDLOG_ERROR("Vulkan extention {} not found!", r_extension);
                 return false;
+            }
+        }
+        return true;
+    }
+
+    bool HelloTriangleApp::hasValidationLayerSupport() {
+        uint32_t layerCount;
+        vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+        std::vector<VkLayerProperties> availableLayers(layerCount);
+        vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+        for (const auto& r_layer : m_ValidationLayers) {
+            SPDLOG_TRACE("Required validation layer {}", r_layer);
+            bool layerFound = false;
+            for (const auto& a_layer : availableLayers) {
+                SPDLOG_TRACE("Available validation layer {}",
+                             a_layer.layerName);
+                if ((std::string)a_layer.layerName == (std::string)r_layer) {
+                    SPDLOG_INFO("Required validation layer {} found.", r_layer);
+                    layerFound = true;
+                    break;
+                }
+            }
+            if (!layerFound) {
+                SPDLOG_ERROR("Vulkan validation layer {} not found!", r_layer);
+                return false;
+            }
         }
         return true;
     }
