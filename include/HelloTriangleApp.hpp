@@ -32,11 +32,11 @@ namespace Vulkan {
 
             const std::vector<const char*> m_ValidationLayers = {
                 "VK_LAYER_KHRONOS_validation"};
-
+#undef NDEBUG
 #ifdef NDEBUG
-            const bool enableValidationLayers = false;
+            const bool m_WantValidationLayers = false;
 #else
-            const bool enableValidationLayers = true;
+            const bool m_WantValidationLayers = true;
 #endif
     };
 

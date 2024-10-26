@@ -98,21 +98,27 @@ namespace Vulkan {
 #endif
         createInfo.enabledExtensionCount = (uint32_t)requiredExtensions.size();
         createInfo.ppEnabledExtensionNames = requiredExtensions.data();
-        createInfo.enabledLayerCount = 0;
 
         if (!hasRequiredVulkanExtensions(requiredExtensions)) {
             throw std::runtime_error("One or more required Vulkan extensions "
                                      "GLFW needs are missing!");
         }
 
-        if (!hasValidationLayerSupport()) {
-            throw std::runtime_error(
-                "One or more Vulkan validation layers are missing!");
+        if (m_WantValidationLayers && !hasValidationLayerSupport()) {
+            throw std::runtime_error("Vulkan validation layers are requested, "
+                                     "but one or more are missing!");
         }
+
+        if (m_WantValidationLayers) {
+            createInfo.ppEnabledLayerNames = m_ValidationLayers.data();
+            createInfo.enabledLayerCount = m_ValidationLayers.size();
+        } else
+            createInfo.enabledLayerCount = 0;
 
         VkResult result = vkCreateInstance(&createInfo, nullptr, &m_Instance);
         if (result != VK_SUCCESS) {
-            printf("Result of vkCreateInstance = %d\n", result);
+            SPDLOG_ERROR("Return code of vkCreateInstance(): {}",
+                         (uint32_t)result);
             throw std::runtime_error("Failed to create Vulkan instance!");
         }
     }
