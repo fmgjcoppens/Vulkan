@@ -1,6 +1,6 @@
 #include "HelloTriangleApp.hpp"
-#include "glm/ext/scalar_uint_sized.hpp"
 #include <cstdint>
+#include <iostream>
 #include <string>
 #include <vector>
 #include <vulkan/vulkan_core.h>
@@ -14,6 +14,37 @@
 #define macOS
 
 namespace Vulkan {
+
+    VkResult CreateDebugUtilsMessengerEXT(
+        VkInstance instance,
+        const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+        const VkAllocationCallbacks* pAllocator,
+        VkDebugUtilsMessengerEXT* pDebugMessenger) {
+        SPDLOG_TRACE("CreateDebugUtilsMessengerEXT()");
+
+        auto f_pointer =
+            (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+                instance, "vkCreateDebugUtilsMessengerEXT");
+        if (f_pointer != nullptr) {
+            return f_pointer(instance, pCreateInfo, pAllocator,
+                             pDebugMessenger);
+        } else {
+            return VK_ERROR_EXTENSION_NOT_PRESENT;
+        }
+    }
+
+    void
+    DestroyDebugUtilsMessengerEXT(VkInstance instance,
+                                  VkDebugUtilsMessengerEXT debugMessenger,
+                                  const VkAllocationCallbacks* pAllocator) {
+        SPDLOG_TRACE("DestroyDebugUtilsMessengerEXT()");
+
+        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+            instance, "vkDestroyDebugUtilsMessengerEXT");
+        if (func != nullptr) {
+            func(instance, debugMessenger, pAllocator);
+        }
+    }
 
     HelloTriangleApp::HelloTriangleApp() {
         SPDLOG_TRACE("HelloTriangleApp::HelloTriangleApp()");
@@ -45,6 +76,7 @@ namespace Vulkan {
     void HelloTriangleApp::initVulkan() {
         SPDLOG_TRACE("HelloTriangleApp::initVulkan()");
         createVulkanInstance();
+        setupDebugMessenger();
     }
 
     void HelloTriangleApp::mainLoop() {
@@ -61,6 +93,12 @@ namespace Vulkan {
 
     void HelloTriangleApp::cleanup() {
         SPDLOG_TRACE("HelloTriangleApp::cleanup()");
+
+        if (m_WantValidationLayers) {
+            DestroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger,
+                                          nullptr);
+        }
+
         vkDestroyInstance(m_Instance, nullptr);
         glfwDestroyWindow(m_Window);
         glfwTerminate();
@@ -70,7 +108,7 @@ namespace Vulkan {
      ** 2nd-level functions **
      *************************/
     void HelloTriangleApp::createVulkanInstance() {
-        SPDLOG_TRACE("HelloTriangleApp::createInstance()");
+        SPDLOG_TRACE("HelloTriangleApp::createVulkanInstance()");
 
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -89,30 +127,78 @@ namespace Vulkan {
 #ifdef macOS
         createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #endif
-        createInfo.enabledExtensionCount = (uint32_t)requiredExtensions.size();
+        createInfo.enabledExtensionCount =
+            static_cast<uint32_t>(requiredExtensions.size());
         createInfo.ppEnabledExtensionNames = requiredExtensions.data();
+
+        // If validation layers are enabled, check their availablilty before the
+        // other extensions as support for extension VK_EXT_debug_utils is
+        // implied by availability of the validation layers. If they're not
+        // available there is no need to check the extension.
+        if (m_WantValidationLayers && !hasValidationLayerSupport()) {
+            throw std::runtime_error("Vulkan validation layers are requested, "
+                                     "but one or more are missing!");
+        }
 
         if (!hasRequiredVulkanExtensions(requiredExtensions)) {
             throw std::runtime_error("One or more required Vulkan extensions "
                                      "GLFW needs are missing!");
         }
 
-        if (m_WantValidationLayers && !hasValidationLayerSupport()) {
-            throw std::runtime_error("Vulkan validation layers are requested, "
-                                     "but one or more are missing!");
-        }
-
+        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
         if (m_WantValidationLayers) {
             createInfo.ppEnabledLayerNames = m_ValidationLayers.data();
-            createInfo.enabledLayerCount = m_ValidationLayers.size();
-        } else
+            createInfo.enabledLayerCount =
+                static_cast<uint32_t>(m_ValidationLayers.size());
+            populateDebugMessengerCreateInfo(debugCreateInfo);
+            createInfo.pNext =
+                (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+        } else {
             createInfo.enabledLayerCount = 0;
+            createInfo.pNext = nullptr;
+        }
 
         VkResult result = vkCreateInstance(&createInfo, nullptr, &m_Instance);
         if (result != VK_SUCCESS) {
             SPDLOG_ERROR("Return code of vkCreateInstance(): {}",
                          (uint32_t)result);
             throw std::runtime_error("Failed to create Vulkan instance!");
+        }
+    }
+
+    void HelloTriangleApp::populateDebugMessengerCreateInfo(
+        VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
+        SPDLOG_TRACE("HelloTriangleApp::populateDebugMessengerCreateInfo()");
+
+        createInfo = {};
+        createInfo.sType =
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        createInfo.messageSeverity =
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        createInfo.messageType =
+            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        createInfo.pfnUserCallback = debugCallback;
+    }
+
+    void HelloTriangleApp::setupDebugMessenger() {
+        SPDLOG_TRACE("HelloTriangleApp::setupDebugMessenger()");
+
+        if (!m_WantValidationLayers)
+            return;
+
+        VkDebugUtilsMessengerCreateInfoEXT createInfo{};
+        populateDebugMessengerCreateInfo(createInfo);
+
+        VkResult result = CreateDebugUtilsMessengerEXT(
+            m_Instance, &createInfo, nullptr, &m_DebugMessenger);
+        if (result != VK_SUCCESS) {
+            SPDLOG_ERROR("Return code of CreateDebugUtilsMessengerEXT(): {}",
+                         (uint32_t)result);
+            throw std::runtime_error("Failed to set up debug messenger!");
         }
     }
 
@@ -140,7 +226,7 @@ namespace Vulkan {
     }
 
     bool HelloTriangleApp::hasRequiredVulkanExtensions(
-        const std::vector<const char*>& re) {
+        const std::vector<const char*>& requiredExtensions) {
         SPDLOG_TRACE("HelloTriangleApp::hasRequiredVulkanExtensions()");
 
         // SPDLOG_INFO("--------------------------------");
@@ -152,30 +238,28 @@ namespace Vulkan {
         uint32_t extensionCount = 0;
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
                                                nullptr);
-        std::vector<VkExtensionProperties> extensions(extensionCount);
+        std::vector<VkExtensionProperties> availableExtensions(extensionCount);
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
-                                               extensions.data());
+                                               availableExtensions.data());
         // SPDLOG_INFO("----------------------------");
         // SPDLOG_TRACE("Available Vulkan extensions:");
         // for (const auto& extension : extensions) {
         //     SPDLOG_TRACE("\t{}", extension.extensionName);
         // }
 
-        for (const auto& r_extension : re) {
-            SPDLOG_TRACE("Required extension {}", r_extension);
+        for (const auto& re : requiredExtensions) {
+            SPDLOG_TRACE("Required extension {}", re);
             bool extensionFound = false;
-            for (const auto& a_extension : extensions) {
-                SPDLOG_TRACE("Available extension {}",
-                             a_extension.extensionName);
-                if ((std::string)a_extension.extensionName ==
-                    (std::string)r_extension) {
-                    SPDLOG_INFO("Required extension {} found.", r_extension);
+            for (const auto& ae : availableExtensions) {
+                SPDLOG_TRACE("Available extension {}", ae.extensionName);
+                if ((std::string)ae.extensionName == (std::string)re) {
+                    SPDLOG_INFO("Required extension {} found.", re);
                     extensionFound = true;
                     break;
                 }
             }
             if (!extensionFound) {
-                SPDLOG_ERROR("Vulkan extention {} not found!", r_extension);
+                SPDLOG_ERROR("Vulkan extention {} not found!", re);
                 return false;
             }
         }
@@ -208,6 +292,19 @@ namespace Vulkan {
             }
         }
         return true;
+    }
+
+    VKAPI_ATTR VkBool32 VKAPI_CALL HelloTriangleApp::debugCallback(
+        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+        VkDebugUtilsMessageTypeFlagsEXT messageType,
+        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+        void* pUserData) {
+        SPDLOG_TRACE("HelloTriangleApp::debugCallback()");
+
+        std::cerr << "validation layer: " << pCallbackData->pMessage
+                  << std::endl;
+
+        return VK_FALSE;
     }
 
 } // namespace Vulkan
