@@ -71,6 +71,7 @@ namespace Vulkan {
      *************************/
     void HelloTriangleApp::createVulkanInstance() {
         SPDLOG_TRACE("HelloTriangleApp::createInstance()");
+
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.pApplicationName = "Hello Triangle";
@@ -83,17 +84,9 @@ namespace Vulkan {
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &appInfo;
 
-        uint32_t glfwExtensionCount = 0;
-        const char** glfwExtensions;
-        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+        auto requiredExtensions = getRequiredExtensions();
 
-        std::vector<const char*> requiredExtensions;
-        for (uint32_t i = 0; i < glfwExtensionCount; i++) {
-            requiredExtensions.emplace_back(glfwExtensions[i]);
-        }
 #ifdef macOS
-        requiredExtensions.emplace_back(
-            VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
         createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #endif
         createInfo.enabledExtensionCount = (uint32_t)requiredExtensions.size();
@@ -123,9 +116,33 @@ namespace Vulkan {
         }
     }
 
+    /*************************
+     ** 3nd-level functions **
+     *************************/
+    std::vector<const char*> HelloTriangleApp::getRequiredExtensions() {
+        SPDLOG_TRACE("HelloTriangleApp::getRequiredExtensions()");
+
+        uint32_t glfwExtensionCount = 0;
+        const char** glfwExtensions;
+        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+        std::vector<const char*> extensions(
+            glfwExtensions, glfwExtensions + glfwExtensionCount);
+
+#ifdef macOS
+        extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+#endif
+
+        if (m_WantValidationLayers) {
+            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        }
+        return extensions;
+    }
+
     bool HelloTriangleApp::hasRequiredVulkanExtensions(
         const std::vector<const char*>& re) {
-        // SPDLOG_TRACE("HelloTriangleApp::hasRequiredVulkanExtensions()");
+        SPDLOG_TRACE("HelloTriangleApp::hasRequiredVulkanExtensions()");
+
         // SPDLOG_INFO("--------------------------------");
         // SPDLOG_INFO("Required GLFW Vulkan extensions:");
         // for (const auto& extension : re) {
@@ -166,6 +183,8 @@ namespace Vulkan {
     }
 
     bool HelloTriangleApp::hasValidationLayerSupport() {
+        SPDLOG_TRACE("HelloTriangleApp::hasValidationLayerSupport()");
+
         uint32_t layerCount;
         vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
         std::vector<VkLayerProperties> availableLayers(layerCount);

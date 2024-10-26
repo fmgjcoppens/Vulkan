@@ -19,6 +19,7 @@ namespace Vulkan {
             void mainLoop();
             void cleanup();
             void createVulkanInstance();
+            std::vector<const char*> getRequiredExtensions();
             bool
             hasRequiredVulkanExtensions(const std::vector<const char*>& re);
             bool hasValidationLayerSupport();
