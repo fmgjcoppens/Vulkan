@@ -229,23 +229,12 @@ namespace Vulkan {
         const std::vector<const char*>& requiredExtensions) {
         SPDLOG_TRACE("HelloTriangleApp::hasRequiredVulkanExtensions()");
 
-        // SPDLOG_INFO("--------------------------------");
-        // SPDLOG_INFO("Required GLFW Vulkan extensions:");
-        // for (const auto& extension : re) {
-        //     SPDLOG_INFO("\t{}", extension);
-        // }
-
         uint32_t extensionCount = 0;
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
                                                nullptr);
         std::vector<VkExtensionProperties> availableExtensions(extensionCount);
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
                                                availableExtensions.data());
-        // SPDLOG_INFO("----------------------------");
-        // SPDLOG_TRACE("Available Vulkan extensions:");
-        // for (const auto& extension : extensions) {
-        //     SPDLOG_TRACE("\t{}", extension.extensionName);
-        // }
 
         for (const auto& re : requiredExtensions) {
             SPDLOG_TRACE("Required extension {}", re);
