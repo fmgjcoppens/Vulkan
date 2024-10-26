@@ -2,6 +2,7 @@
 
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan_core.h>
+#include <vector>
 
 namespace Vulkan {
 
@@ -18,7 +19,7 @@ namespace Vulkan {
             void mainLoop();
             void cleanup();
             void createVulkanInstance();
-            bool checkRequiredVulkanExtensions(uint32_t* ec, const char** e);
+            bool hasRequiredVulkanExtensions(const std::vector<const char*>& re);
 
         private:
             GLFWwindow* m_Window;
@@ -26,6 +27,15 @@ namespace Vulkan {
             const uint32_t m_Width = 1280;
             const uint32_t m_Height = 800;
             VkInstance m_Instance;
+
+            const std::vector<const char*> m_ValidationLayers = {
+                "VK_LAYER_KHRONOS_validation"};
+
+#ifdef NDEBUG
+            const bool m_EnableValidationLayers = false;
+#else
+            const bool m_EnableValidationLayers = true;
+#endif
     };
 
 } // namespace Vulkan

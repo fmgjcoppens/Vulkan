@@ -1,5 +1,7 @@
 #include "HelloTriangleApp.hpp"
 #include <cstdint>
+#include <string>
+#include <vector>
 #include <vulkan/vulkan_core.h>
 
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
@@ -83,39 +85,23 @@ namespace Vulkan {
         uint32_t glfwExtensionCount = 0;
         const char** glfwExtensions;
         glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-        SPDLOG_INFO("--------------------------------");
-        SPDLOG_INFO("Required GLFW Vulkan extensions:");
-        for (uint32_t extension = 0; extension < glfwExtensionCount;
-             extension++) {
-            SPDLOG_INFO("\t{}", glfwExtensions[extension]);
-        }
 
-#ifdef macOS
         std::vector<const char*> requiredExtensions;
         for (uint32_t i = 0; i < glfwExtensionCount; i++) {
             requiredExtensions.emplace_back(glfwExtensions[i]);
         }
+#ifdef macOS
         requiredExtensions.emplace_back(
             VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
         createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#endif
         createInfo.enabledExtensionCount = (uint32_t)requiredExtensions.size();
         createInfo.ppEnabledExtensionNames = requiredExtensions.data();
-#else
-        createInfo.enabledExtensionCount = glfwExtensionCount;
-        createInfo.ppEnabledExtensionNames = glfwExtensions;
-#endif
         createInfo.enabledLayerCount = 0;
 
-        uint32_t extensionCount = 0;
-        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
-                                               nullptr);
-        std::vector<VkExtensionProperties> extensions(extensionCount);
-        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
-                                               extensions.data());
-        SPDLOG_INFO("----------------------------");
-        SPDLOG_INFO("Available Vulkan extensions:");
-        for (const auto& extension : extensions) {
-            SPDLOG_INFO("\t{}", extension.extensionName);
+        if (!hasRequiredVulkanExtensions(requiredExtensions)) {
+            throw std::runtime_error("One or more required Vulkan extensions "
+                                     "GLFW needs are missing!");
         }
 
         VkResult result = vkCreateInstance(&createInfo, nullptr, &m_Instance);
@@ -125,12 +111,12 @@ namespace Vulkan {
         }
     }
 
-    bool HelloTriangleApp::checkRequiredVulkanExtensions(uint32_t* ec,
-                                                         const char** e) {
+    bool HelloTriangleApp::hasRequiredVulkanExtensions(
+        const std::vector<const char*>& re) {
         SPDLOG_INFO("--------------------------------");
         SPDLOG_INFO("Required GLFW Vulkan extensions:");
-        for (uint32_t extension = 0; extension < *ec; extension++) {
-            SPDLOG_INFO("\t{}", e[extension]);
+        for (const auto& extension : re) {
+            SPDLOG_INFO("\t{}", extension);
         }
 
         uint32_t extensionCount = 0;
@@ -143,6 +129,22 @@ namespace Vulkan {
         SPDLOG_INFO("Available Vulkan extensions:");
         for (const auto& extension : extensions) {
             SPDLOG_INFO("\t{}", extension.extensionName);
+        }
+
+        for (const auto& r_extension : re) {
+            SPDLOG_TRACE("required extension {}", r_extension);
+            bool found = false;
+            for (const auto& a_extension : extensions) {
+                SPDLOG_TRACE("availba extension {}", a_extension.extensionName);
+                if ((std::string)a_extension.extensionName ==
+                    (std::string)r_extension) {
+                    SPDLOG_INFO("Extension {} found.",
+                                a_extension.extensionName);
+                    found = true;
+                }
+            }
+            if (!found)
+                return false;
         }
         return true;
     }
